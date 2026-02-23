@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="post">
+    Reading Status:
+    <select name="reading_status">
+        <option value="">-- Any --</option>
+        <option value="not read">not read</option>
+        <option value="reading">reading</option>
+        <option value="finished">finished</option>
+        <option value="dnf">dnf</option>
+    </select><br>
+
+    Ownership Status:
+    <select name="ownership_status">
+        <option value="">-- Any --</option>
+        <option value="owned">owned</option>
+        <option value="not owned">not owned</option>
+        <option value="want">want</option>
+    </select><br>
+
+    Tag: <input name="tag"><br><br>
+
+    <button type="submit">Filter</button>
+</form>
+
+{% endblock %}

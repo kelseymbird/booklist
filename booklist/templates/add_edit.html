@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="post">
+    Title: <input name="title" value="{{ book.title if book else '' }}"><br>
+    Author: <input name="author" value="{{ book.author if book else '' }}"><br>
+
+    Reading Status:
+    <select name="reading_status">
+        {% for status in ['not read','reading','finished','dnf'] %}
+            <option value="{{ status }}"
+                {% if book and book.reading_status.value == status %}selected{% endif %}>
+                {{ status }}
+            </option>
+        {% endfor %}
+    </select><br>
+
+    Ownership Status:
+    <select name="ownership_status">
+        {% for status in ['owned','not owned','want'] %}
+            <option value="{{ status }}"
+                {% if book and book.ownership_status.value == status %}selected{% endif %}>
+                {{ status }}
+            </option>
+        {% endfor %}
+    </select><br>
+
+    Rating: <input name="rating" value="{{ book.rating if book else '' }}"><br>
+
+    Tags (comma separated):
+    <input name="tags"
+        value="{% if book %}{% for t in book.tags %}{{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}">
+    <br><br>
+
+    <button type="submit">Save</button>
+</form>
+
+{% endblock %}
