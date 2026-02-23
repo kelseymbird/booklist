@@ -1,0 +1,8 @@
+[project]
+name = "booklist"
+version = "0.1.0"
+description = "Personal long-term book tracking system"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
