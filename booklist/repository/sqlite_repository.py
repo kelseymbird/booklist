@@ -4,7 +4,6 @@ from booklist.domain.book import Book
 from booklist.domain.tag import Tag
 from booklist.domain.enums import ReadingStatus, OwnershipStatus
 
-
 class SQLiteBookRepository:
 
     def __init__(self, db_path="books.db"):
@@ -133,3 +132,33 @@ class SQLiteBookRepository:
         cursor.execute("DELETE FROM book_tags WHERE book_id = ?", (book_id,))
         cursor.execute("DELETE FROM books WHERE id = ?", (book_id,))
         self.conn.commit()
+
+    def update(self, book: Book) -> Book:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE books
+            SET title = ?, author = ?, reading_status = ?, ownership_status = ?, rating = ?, date_started = ?, date_finished = ?, notes = ?
+            WHERE id = ?
+        """, (
+            book.title,
+            book.author,
+            book.reading_status.value,
+            book.ownership_status.value,
+            book.rating,
+            book.date_started.isoformat() if book.date_started else None,
+            book.date_finished.isoformat() if book.date_finished else None,
+            book.notes,
+            book.id
+        ))
+
+        # Update tags: remove old, add new
+        cursor.execute("DELETE FROM book_tags WHERE book_id = ?", (book.id,))
+        for tag in book.tags:
+            tag_id = self._get_or_create_tag(tag.name)
+            cursor.execute(
+                "INSERT OR IGNORE INTO book_tags (book_id, tag_id) VALUES (?, ?)",
+                (book.id, tag_id)
+            )
+
+        self.conn.commit()
+        return book

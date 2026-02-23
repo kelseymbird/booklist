@@ -1,6 +1,5 @@
 from booklist.domain.enums import ReadingStatus, OwnershipStatus
 
-
 class LibraryService:
 
     def __init__(self, repo):
@@ -31,3 +30,6 @@ class LibraryService:
 
     def delete_book(self, book_id):
         self.repo.delete(book_id)
+
+    def update_book(self, book):
+        return self.repo.update(book)

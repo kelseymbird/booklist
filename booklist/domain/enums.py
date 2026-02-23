@@ -1,4 +1,3 @@
-# booklist/domain/enums.py
 from enum import Enum
 
 class ReadingStatus(str, Enum):
