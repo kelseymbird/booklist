@@ -2,13 +2,18 @@ from booklist.repository.sqlite_repository import SQLiteBookRepository
 from booklist.services.library_service import LibraryService
 from booklist.domain.book import Book
 from booklist.domain.tag import Tag
-from booklist.domain.enums import BookStatus
+from booklist.domain.enums import ReadingStatus, OwnershipStatus
 
 
-def prompt_status():
-    print("Status options: owned, reading, read, want")
-    value = input("Status: ").lower()
-    return BookStatus(value)
+def prompt_reading_status():
+    print("Reading status options: not read, reading, finished, dnf")
+    choice = input("Reading status: ").lower()
+    return ReadingStatus(choice)
+
+def prompt_ownership_status():
+    print("Ownership options: owned, not owned, want")
+    choice = input("Ownership status: ").lower()
+    return OwnershipStatus(choice)
 
 
 def prompt_tags():
@@ -34,7 +39,8 @@ def main():
         if choice == "1":
             title = input("Title: ")
             author = input("Author: ")
-            status = prompt_status()
+            reading_status = prompt_reading_status()
+            ownership_status = prompt_ownership_status()
             rating = input("Rating (1-5 or blank): ")
             rating = int(rating) if rating else None
             tags = prompt_tags()
@@ -43,7 +49,8 @@ def main():
                 id=None,
                 title=title,
                 author=author,
-                status=status,
+                reading_status=reading_status,
+                ownership_status=ownership_status,
                 rating=rating,
                 tags=tags
             )

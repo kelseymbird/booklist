@@ -1,4 +1,4 @@
-from booklist.domain.enums import BookStatus
+from booklist.domain.enums import ReadingStatus, OwnershipStatus
 
 
 class LibraryService:
@@ -12,11 +12,14 @@ class LibraryService:
     def list_books(self):
         return self.repo.get_all()
 
-    def filter_books(self, status=None, tag=None, min_rating=None):
+    def filter_books(self, reading_status=None, ownership_status=None, tag=None, min_rating=None):
         books = self.repo.get_all()
 
-        if status:
-            books = [b for b in books if b.status == status]
+        if reading_status:
+            books = [b for b in books if b.reading_status == reading_status]
+
+        if ownership_status:
+            books = [b for b in books if b.ownership_status == ownership_status]
 
         if tag:
             books = [b for b in books if any(t.name == tag for t in b.tags)]

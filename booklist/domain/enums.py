@@ -1,8 +1,13 @@
+# booklist/domain/enums.py
 from enum import Enum
 
-
-class BookStatus(str, Enum):
-    OWNED = "owned"
+class ReadingStatus(str, Enum):
+    NOT_READ = "not read"
     READING = "reading"
-    READ = "read"
+    FINISHED = "finished"
+    DNF = "dnf"  # Did Not Finish
+
+class OwnershipStatus(str, Enum):
+    OWNED = "owned"
+    NOT_OWNED = "not owned"
     WANT = "want"

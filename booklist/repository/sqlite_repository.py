@@ -2,7 +2,7 @@ import sqlite3
 from datetime import date
 from booklist.domain.book import Book
 from booklist.domain.tag import Tag
-from booklist.domain.enums import BookStatus
+from booklist.domain.enums import ReadingStatus, OwnershipStatus
 
 
 class SQLiteBookRepository:
@@ -20,7 +20,8 @@ class SQLiteBookRepository:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             author TEXT NOT NULL,
-            status TEXT NOT NULL,
+            reading_status TEXT NOT NULL DEFAULT 'not read',
+            ownership_status TEXT NOT NULL DEFAULT 'not owned',
             rating INTEGER,
             date_started TEXT,
             date_finished TEXT,
@@ -51,12 +52,13 @@ class SQLiteBookRepository:
         cursor = self.conn.cursor()
 
         cursor.execute("""
-        INSERT INTO books (title, author, status, rating, date_started, date_finished, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (title, author, reading_status, ownership_status, rating, date_started, date_finished, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             book.title,
             book.author,
-            book.status.value,
+            book.reading_status.value,
+            book.ownership_status.value,
             book.rating,
             book.date_started.isoformat() if book.date_started else None,
             book.date_finished.isoformat() if book.date_finished else None,
@@ -114,7 +116,8 @@ class SQLiteBookRepository:
                     id=book_id,
                     title=row["title"],
                     author=row["author"],
-                    status=BookStatus(row["status"]),
+                    reading_status=ReadingStatus(row["reading_status"]),
+                    ownership_status=OwnershipStatus(row["ownership_status"]),
                     rating=row["rating"],
                     date_started=date.fromisoformat(row["date_started"]) if row["date_started"] else None,
                     date_finished=date.fromisoformat(row["date_finished"]) if row["date_finished"] else None,
