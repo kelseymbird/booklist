@@ -1,164 +1,128 @@
 import sqlite3
-from datetime import date
 from booklist.domain.book import Book
 from booklist.domain.tag import Tag
 from booklist.domain.enums import ReadingStatus, OwnershipStatus
+from datetime import date
+
+DB_FILE = "books.db"
 
 class SQLiteBookRepository:
+    def __init__(self):
+        # Create tables if they don't exist
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS books (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    author TEXT NOT NULL,
+                    reading_status TEXT,
+                    ownership_status TEXT,
+                    rating INTEGER
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tags (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    book_id INTEGER,
+                    name TEXT,
+                    FOREIGN KEY(book_id) REFERENCES books(id)
+                )
+            """)
+            conn.commit()
 
-    def __init__(self, db_path="books.db"):
-        self.conn = sqlite3.connect(db_path)
-        self.conn.row_factory = sqlite3.Row
-        self._create_tables()
+    # Add a book
+    def add(self, book: Book):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO books (title, author, reading_status, ownership_status, rating)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                book.title,
+                book.author,
+                book.reading_status.value,
+                book.ownership_status.value,
+                book.rating
+            ))
+            book.id = cursor.lastrowid
 
-    def _create_tables(self):
-        cursor = self.conn.cursor()
+            for tag in book.tags:
+                cursor.execute("""
+                    INSERT INTO tags (book_id, name) VALUES (?, ?)
+                """, (book.id, tag.name))
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS books (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            author TEXT NOT NULL,
-            reading_status TEXT NOT NULL DEFAULT 'not read',
-            ownership_status TEXT NOT NULL DEFAULT 'not owned',
-            rating INTEGER,
-            date_started TEXT,
-            date_finished TEXT,
-            notes TEXT
-        )
-        """)
-
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
-        )
-        """)
-
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS book_tags (
-            book_id INTEGER,
-            tag_id INTEGER,
-            PRIMARY KEY (book_id, tag_id),
-            FOREIGN KEY(book_id) REFERENCES books(id),
-            FOREIGN KEY(tag_id) REFERENCES tags(id)
-        )
-        """)
-
-        self.conn.commit()
-
-    def add(self, book: Book) -> Book:
-        cursor = self.conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO books (title, author, reading_status, ownership_status, rating, date_started, date_finished, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            book.title,
-            book.author,
-            book.reading_status.value,
-            book.ownership_status.value,
-            book.rating,
-            book.date_started.isoformat() if book.date_started else None,
-            book.date_finished.isoformat() if book.date_finished else None,
-            book.notes
-        ))
-
-        book_id = cursor.lastrowid
-
-        for tag in book.tags:
-            tag_id = self._get_or_create_tag(tag.name)
-            cursor.execute(
-                "INSERT OR IGNORE INTO book_tags (book_id, tag_id) VALUES (?, ?)",
-                (book_id, tag_id)
-            )
-
-        self.conn.commit()
-        book.id = book_id
+            conn.commit()
         return book
 
-    def _get_or_create_tag(self, name: str) -> int:
-        cursor = self.conn.cursor()
-
-        cursor.execute("SELECT id FROM tags WHERE name = ?", (name,))
-        row = cursor.fetchone()
-
-        if row:
-            return row["id"]
-
-        cursor.execute("INSERT INTO tags (name) VALUES (?)", (name,))
-        return cursor.lastrowid
-
-    def get_all(self) -> list[Book]:
-        cursor = self.conn.cursor()
-
-        cursor.execute("SELECT * FROM books")
-        book_rows = cursor.fetchall()
-
-        books = []
-
-        for row in book_rows:
-            book_id = row["id"]
-
+    # Update a book
+    def update(self, book: Book):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
             cursor.execute("""
-                SELECT t.id, t.name
-                FROM tags t
-                JOIN book_tags bt ON bt.tag_id = t.id
-                WHERE bt.book_id = ?
-            """, (book_id,))
-            tag_rows = cursor.fetchall()
+                UPDATE books
+                SET title=?, author=?, reading_status=?, ownership_status=?, rating=?
+                WHERE id=?
+            """, (
+                book.title,
+                book.author,
+                book.reading_status.value,
+                book.ownership_status.value,
+                book.rating,
+                book.id
+            ))
 
-            tags = [Tag(id=t["id"], name=t["name"]) for t in tag_rows]
+            # Delete old tags
+            cursor.execute("DELETE FROM tags WHERE book_id=?", (book.id,))
+            # Insert new tags
+            for tag in book.tags:
+                cursor.execute("""
+                    INSERT INTO tags (book_id, name) VALUES (?, ?)
+                """, (book.id, tag.name))
 
-            books.append(
-                Book(
+            conn.commit()
+        return book
+
+    # Delete a book
+    def delete(self, book_id: int):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM tags WHERE book_id=?", (book_id,))
+            cursor.execute("DELETE FROM books WHERE id=?", (book_id,))
+            conn.commit()
+
+    # Get all books
+    def get_all(self):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, title, author, reading_status, ownership_status, rating FROM books")
+            rows = cursor.fetchall()
+            books = []
+            for row in rows:
+                book_id, title, author, reading_status, ownership_status, rating = row
+
+                cursor.execute("SELECT name FROM tags WHERE book_id=?", (book_id,))
+                tag_rows = cursor.fetchall()
+                tags = [Tag(id=None, name=tr[0]) for tr in tag_rows]
+
+                books.append(Book(
                     id=book_id,
-                    title=row["title"],
-                    author=row["author"],
-                    reading_status=ReadingStatus(row["reading_status"]),
-                    ownership_status=OwnershipStatus(row["ownership_status"]),
-                    rating=row["rating"],
-                    date_started=date.fromisoformat(row["date_started"]) if row["date_started"] else None,
-                    date_finished=date.fromisoformat(row["date_finished"]) if row["date_finished"] else None,
-                    notes=row["notes"],
+                    title=title,
+                    author=author,
+                    reading_status=ReadingStatus(reading_status),
+                    ownership_status=OwnershipStatus(ownership_status),
+                    rating=rating,
                     tags=tags
-                )
-            )
-
+                ))
         return books
 
-    def delete(self, book_id: int) -> None:
-        cursor = self.conn.cursor()
-        cursor.execute("DELETE FROM book_tags WHERE book_id = ?", (book_id,))
-        cursor.execute("DELETE FROM books WHERE id = ?", (book_id,))
-        self.conn.commit()
-
-    def update(self, book: Book) -> Book:
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE books
-            SET title = ?, author = ?, reading_status = ?, ownership_status = ?, rating = ?, date_started = ?, date_finished = ?, notes = ?
-            WHERE id = ?
-        """, (
-            book.title,
-            book.author,
-            book.reading_status.value,
-            book.ownership_status.value,
-            book.rating,
-            book.date_started.isoformat() if book.date_started else None,
-            book.date_finished.isoformat() if book.date_finished else None,
-            book.notes,
-            book.id
-        ))
-
-        # Update tags: remove old, add new
-        cursor.execute("DELETE FROM book_tags WHERE book_id = ?", (book.id,))
-        for tag in book.tags:
-            tag_id = self._get_or_create_tag(tag.name)
-            cursor.execute(
-                "INSERT OR IGNORE INTO book_tags (book_id, tag_id) VALUES (?, ?)",
-                (book.id, tag_id)
-            )
-
-        self.conn.commit()
-        return book
+    # Optional: filter books
+    def filter(self, reading_status=None, ownership_status=None, tag=None):
+        books = self.get_all()
+        if reading_status:
+            books = [b for b in books if b.reading_status == reading_status]
+        if ownership_status:
+            books = [b for b in books if b.ownership_status == ownership_status]
+        if tag:
+            books = [b for b in books if any(t.name == tag for t in b.tags)]
+        return books
