@@ -22,12 +22,24 @@ def add_book():
     if request.method == "POST":
         title = request.form["title"]
         author = request.form["author"]
+
         reading_status = ReadingStatus(request.form["reading_status"])
         ownership_status = OwnershipStatus(request.form["ownership_status"])
+
         rating = request.form.get("rating")
         rating = int(rating) if rating else None
+
+        # ✅ Series fields
+        series_name = request.form.get("series_name") or None
+        series_position = request.form.get("series_position")
+        series_position = int(series_position) if series_position else None
+
         tags_raw = request.form.get("tags", "")
-        tags = [Tag(id=None, name=t.strip()) for t in tags_raw.split(",") if t.strip()]
+        tags = [
+            Tag(id=None, name=t.strip())
+            for t in tags_raw.split(",")
+            if t.strip()
+        ]
 
         book = Book(
             id=None,
@@ -36,7 +48,9 @@ def add_book():
             reading_status=reading_status,
             ownership_status=ownership_status,
             rating=rating,
-            tags=tags
+            tags=tags,
+            series_name=series_name,
+            series_position=series_position,
         )
 
         service.add_book(book)
@@ -49,6 +63,7 @@ def add_book():
 def edit_book(book_id):
     books = service.list_books()
     book = next((b for b in books if b.id == book_id), None)
+
     if not book:
         return redirect(url_for("index"))
 
@@ -57,10 +72,21 @@ def edit_book(book_id):
         book.author = request.form["author"]
         book.reading_status = ReadingStatus(request.form["reading_status"])
         book.ownership_status = OwnershipStatus(request.form["ownership_status"])
+
         rating = request.form.get("rating")
         book.rating = int(rating) if rating else None
+
+        # ✅ Series fields
+        book.series_name = request.form.get("series_name") or None
+        series_position = request.form.get("series_position")
+        book.series_position = int(series_position) if series_position else None
+
         tags_raw = request.form.get("tags", "")
-        book.tags = [Tag(id=None, name=t.strip()) for t in tags_raw.split(",") if t.strip()]
+        book.tags = [
+            Tag(id=None, name=t.strip())
+            for t in tags_raw.split(",")
+            if t.strip()
+        ]
 
         service.update_book(book)
         return redirect(url_for("index"))

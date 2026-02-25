@@ -6,13 +6,24 @@ from .enums import ReadingStatus, OwnershipStatus
 
 @dataclass
 class Book:
-    id: int | None
-    title: str
-    author: str
-    reading_status: ReadingStatus = ReadingStatus.NOT_READ
-    ownership_status: OwnershipStatus = OwnershipStatus.NOT_OWNED
-    rating: int | None = None
-    date_started: date | None = None
-    date_finished: date | None = None
-    notes: str | None = None
-    tags: List[Tag] = field(default_factory=list)
+    def __init__(
+        self,
+        title,
+        author,
+        reading_status,
+        ownership_status,
+        rating=None,
+        tags=None,
+        id=None,
+        series_name=None,
+        series_position=None
+    ):
+        self.id = id
+        self.title = title
+        self.author = author
+        self.reading_status = reading_status
+        self.ownership_status = ownership_status
+        self.rating = rating
+        self.tags = tags if tags else []
+        self.series_name = series_name
+        self.series_position = series_position

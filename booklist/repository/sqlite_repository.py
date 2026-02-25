@@ -18,7 +18,9 @@ class SQLiteBookRepository:
                     author TEXT NOT NULL,
                     reading_status TEXT,
                     ownership_status TEXT,
-                    rating INTEGER
+                    rating INTEGER,
+                    series_name TEXT,
+                    series_position INTEGER
                 )
             """)
             cursor.execute("""
@@ -36,14 +38,17 @@ class SQLiteBookRepository:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO books (title, author, reading_status, ownership_status, rating)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO books 
+                (title, author, reading_status, ownership_status, rating, series_name, series_position)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 book.title,
                 book.author,
                 book.reading_status.value,
                 book.ownership_status.value,
-                book.rating
+                book.rating,
+                book.series_name,
+                book.series_position
             ))
             book.id = cursor.lastrowid
 
@@ -61,7 +66,8 @@ class SQLiteBookRepository:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE books
-                SET title=?, author=?, reading_status=?, ownership_status=?, rating=?
+                SET title=?, author=?, reading_status=?, ownership_status=?, rating=?,
+                    series_name=?, series_position=?
                 WHERE id=?
             """, (
                 book.title,
@@ -69,9 +75,10 @@ class SQLiteBookRepository:
                 book.reading_status.value,
                 book.ownership_status.value,
                 book.rating,
+                book.series_name,
+                book.series_position,
                 book.id
             ))
-
             # Delete old tags
             cursor.execute("DELETE FROM tags WHERE book_id=?", (book.id,))
             # Insert new tags
@@ -95,11 +102,15 @@ class SQLiteBookRepository:
     def get_all(self):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, title, author, reading_status, ownership_status, rating FROM books")
+            cursor.execute("""
+                SELECT id, title, author, reading_status,
+                       ownership_status, rating, series_name, series_position
+                FROM books
+            """)
             rows = cursor.fetchall()
             books = []
             for row in rows:
-                book_id, title, author, reading_status, ownership_status, rating = row
+                book_id, title, author, reading_status, ownership_status, rating, series_name, series_position = row
 
                 cursor.execute("SELECT name FROM tags WHERE book_id=?", (book_id,))
                 tag_rows = cursor.fetchall()
@@ -112,7 +123,9 @@ class SQLiteBookRepository:
                     reading_status=ReadingStatus(reading_status),
                     ownership_status=OwnershipStatus(ownership_status),
                     rating=rating,
-                    tags=tags
+                    tags=tags,
+                    series_name=series_name,
+                    series_position=series_position
                 ))
         return books
 

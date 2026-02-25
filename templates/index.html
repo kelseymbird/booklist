@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Your Library</h2>
+
+{% for book in books %}
+    <div>
+        <h3>
+            {{ book.title }} by {{ book.author }}
+            {% if book.series_name %}
+                <br>
+                <small>
+                    Series: {{ book.series_name }}
+                    {% if book.series_position %}
+                        (Book {{ book.series_position }})
+                    {% endif %}
+                </small>
+            {% endif %}
+        </h3>
+
+        <p>
+            Reading: {{ book.reading_status.value }} |
+            Ownership: {{ book.ownership_status.value }} |
+            Rating: {{ book.rating or "-" }}
+        </p>
+
+        <p>
+            Tags:
+            {% if book.tags %}
+                {% for tag in book.tags %}
+                    {{ tag.name }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                -
+            {% endif %}
+        </p>
+
+        <a href="/edit/{{ book.id }}">Edit</a> |
+        <a href="/delete/{{ book.id }}">Delete</a>
+        <hr>
+    </div>
+{% else %}
+    <p>No books yet.</p>
+{% endfor %}
+
+{% endblock %}
