@@ -4,7 +4,7 @@
 <h2>Your Library</h2>
 
 {% for book in books %}
-    <div>
+    <div class="book-card">
         <h3>
             {{ book.title }} by {{ book.author }}
             {% if book.series_name %}
@@ -35,8 +35,8 @@
             {% endif %}
         </p>
 
-        <a href="/edit/{{ book.id }}">Edit</a> |
-        <a href="/delete/{{ book.id }}">Delete</a>
+        <a class="button" href="/edit/{{ book.id }}">Edit</a> |
+        <a class="button" href="/delete/{{ book.id }}">Delete</a>
         <hr>
     </div>
 {% else %}

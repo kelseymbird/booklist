@@ -4,6 +4,9 @@
 <form method="post">
     Title: <input name="title" value="{{ book.title if book else '' }}"><br>
     Author: <input name="author" value="{{ book.author if book else '' }}"><br>
+    
+    Series: <input name="series_name" value"{{ book.series_name if book else '' }}"><br>
+    Series Position: <input name="series_position" value"{{ book.series_position if book else '' }}"><br>
 
     Reading Status:
     <select name="reading_status">
