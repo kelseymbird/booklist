@@ -1,0 +1,44 @@
+/* Background */
+body {
+    background-color: #9CAF88;  /* medium sage green */
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Main content container */
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+
+/* Book cards */
+.book-card {
+    background-color: #ffffff;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Remove link underline */
+a {
+    text-decoration: none;
+}
+
+/* Bubble buttons */
+.button {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-top: 5px;
+    border-radius: 20px;
+    background-color: #6E8B6B;   /* darker sage */
+    color: white;
+    font-size: 0.9rem;
+    transition: 0.2s ease;
+}
+
+.button:hover {
+    background-color: #5F7A5C;
+    transform: scale(1.05);
+}
