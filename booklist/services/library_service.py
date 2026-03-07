@@ -11,7 +11,7 @@ class LibraryService:
     def list_books(self):
         return self.repo.get_all()
 
-    def filter_books(self, reading_status=None, ownership_status=None, tag=None, min_rating=None):
+    def filter_books(self, reading_status=None, ownership_status=None, tag=None, min_rating=None, series_name=None):
         books = self.repo.get_all()
 
         if reading_status:
@@ -25,6 +25,9 @@ class LibraryService:
 
         if min_rating:
             books = [b for b in books if b.rating and b.rating >= min_rating]
+        if series_name:
+            books = [b for b in books if b.series_name and series_name.lower() in b.series_name.lower()]
+
 
         return books
 

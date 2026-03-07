@@ -106,6 +106,8 @@ def filter_books():
         reading_status = request.form.get("reading_status")
         ownership_status = request.form.get("ownership_status")
         tag = request.form.get("tag")
+        series_name = request.form.get("series_name")
+
 
         reading_status = ReadingStatus(reading_status) if reading_status else None
         ownership_status = OwnershipStatus(ownership_status) if ownership_status else None
@@ -114,6 +116,7 @@ def filter_books():
             reading_status=reading_status,
             ownership_status=ownership_status,
             tag=tag or None
+            series_name=series_name or None
         )
 
         return render_template("index.html", books=books)
