@@ -115,7 +115,7 @@ def filter_books():
         books = service.filter_books(
             reading_status=reading_status,
             ownership_status=ownership_status,
-            tag=tag or None
+            tag=tag or None,
             series_name=series_name or None
         )
 
