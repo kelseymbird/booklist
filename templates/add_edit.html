@@ -35,7 +35,7 @@
         value="{% if book %}{% for t in book.tags %}{{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}">
     <br><br>
 
-    <button type="submit">Save</button>
+    <button class="button" type="submit">Save</button>
 </form>
 
 {% endblock %}

@@ -6,10 +6,36 @@ body {
     padding: 20px;
 }
 
+.page-title {
+   text-align: center;
+   margin-bottom: 20px;
+}
+
 /* Main content container */
 .container {
     max-width: 800px;
     margin: auto;
+}
+
+/* Grid layout for book cards */
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+input {
+
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f6f6f6;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+
 }
 
 /* Book cards */
@@ -19,6 +45,21 @@ body {
     margin-bottom: 15px;
     border-radius: 12px;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.book-card p {
+    margin: 0;
+}
+
+.book-card h3 {
+    margin: 0 0 6px 0;
+}
+
+.book-actions {
+    margin-top: 8px;
 }
 
 /* Remove link underline */
@@ -29,6 +70,7 @@ a {
 /* Bubble buttons */
 .button {
     display: inline-block;
+    width: auto;
     padding: 6px 12px;
     margin-top: 5px;
     border-radius: 20px;
@@ -41,4 +83,16 @@ a {
 .button:hover {
     background-color: #5F7A5C;
     transform: scale(1.05);
+}
+
+@media (max-width: 900px) {
+    .book-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .book-grid {
+        grid-template-columns: 1fr;
+    }
 }

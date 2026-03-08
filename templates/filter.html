@@ -25,7 +25,33 @@
 
     Tag: <input name="tag"><br><br>
 
-    <button type="submit">Filter</button>
+    <button class="button" type="submit">Filter</button>
 </form>
+
+<hr>
+
+<div class="book-grid">
+
+{% for book in books %}
+<div class="book-card">
+
+<h3>{{ book.title }}</h3>
+
+<p>Author: {{ book.author }}</p>
+<p>Reading: {{ book.reading_status.value }}</p>
+<p>Ownership: {{ book.ownership_status.value }}</p>
+<p>Rating: {{ book.rating or "-" }}</p>
+
+<div class="book-actions">
+<a class="button" href="/edit/{{ book.id }}">Edit</a>
+<a class="button" href="/delete/{{ book.id }}">Delete</a>
+</div>
+
+</div>
+{% else %}
+<p>No books match the filters.</p>
+{% endfor %}
+
+</div>
 
 {% endblock %}

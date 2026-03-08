@@ -119,7 +119,7 @@ def filter_books():
             series_name=series_name or None
         )
 
-        return render_template("index.html", books=books)
+        return render_template("filter.html", books=books)
 
     return render_template("filter.html")
 

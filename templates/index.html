@@ -3,10 +3,12 @@
 
 <h2>Your Library</h2>
 
+<div class="book-grid">
 {% for book in books %}
     <div class="book-card">
         <h3>
-            {{ book.title }} by {{ book.author }}
+	    <p>{{ book.title }}</p>
+	    <p>{{ book.author }}</p>
             {% if book.series_name %}
                 <br>
                 <small>
@@ -18,11 +20,10 @@
             {% endif %}
         </h3>
 
-        <p>
-            Reading: {{ book.reading_status.value }} |
-            Ownership: {{ book.ownership_status.value }} |
-            Rating: {{ book.rating or "-" }}
-        </p>
+        
+	<p>Reading: {{ book.reading_status.value }}</p>
+	<p>Ownership: {{ book.ownership_status.value }}</p>
+        <p>Rating: {{ book.rating or "-" }}</p>
 
         <p>
             Tags:
@@ -34,13 +35,14 @@
                 -
             {% endif %}
         </p>
-
-        <a class="button" href="/edit/{{ book.id }}">Edit</a> |
+        <div class="book-actions">
+        <a class="button" href="/edit/{{ book.id }}">Edit</a> 
         <a class="button" href="/delete/{{ book.id }}">Delete</a>
-        <hr>
+	</div>
+	<hr>
     </div>
 {% else %}
     <p>No books yet.</p>
 {% endfor %}
-
+</div>
 {% endblock %}
