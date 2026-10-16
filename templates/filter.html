@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
+<a class="back-link" href="{{ url_for('index') }}">← Home</a>
+<h2>Filter Library</h2>
+
 <form method="post">
+
+    Title:
+    <input type="text" name="title"><br>
 
     Series:
     <input type="text" name="series_name"><br>
@@ -28,6 +34,7 @@
     <button class="button" type="submit">Filter</button>
 </form>
 
+{% if books is not none %}
 <hr>
 
 <div class="book-grid">
@@ -53,5 +60,6 @@
 {% endfor %}
 
 </div>
+{% endif %}
 
 {% endblock %}

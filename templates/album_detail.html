@@ -2,6 +2,11 @@
 {% block content %}
 <a class="back-link" href="{{ url_for('albums') }}">← All albums</a>
 <h2>{{ album.name }}</h2>
+<div class="book-actions">
+    <form method="post" action="{{ url_for('delete_album', album_id=album.id) }}" onsubmit="return confirm('Delete this album? Its books will remain in your library.');">
+        <button class="button" type="submit">Delete Album</button>
+    </form>
+</div>
 <p class="page-intro">{{ books|length }} {{ "book" if books|length == 1 else "books" }} in this album</p>
 
 <div class="book-grid">

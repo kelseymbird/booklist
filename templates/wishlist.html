@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Wishlist</h2>
+<p class="book-actions">
+    <a class="button" href="{{ url_for('add_wishlist_book') }}">Add Wishlist Book</a>
+    <a class="button" href="{{ url_for('filter_wishlist') }}">Filter Wishlist</a>
+</p>
+
+
+
+<div class="book-grid">
+{% for book in books %}
+    <article class="book-card">
+        <div>
+            <h3>{{ book.title }}</h3>
+            <p>Author: {{ book.author }}</p>
+            {% if book.series_name %}<p>Series: {{ book.series_name }}{% if book.series_position %} (Book {{ book.series_position }}){% endif %}</p>{% endif %}
+            <p>Reading: {{ book.reading_status.value }}</p>
+            <p>Rating: {{ book.rating or "-" }}</p>
+            <p>Tags: {% if book.tags %}{{ book.tags|map(attribute="name")|join(", ") }}{% else %}-{% endif %}</p>
+            {% if book.albums %}<p>Albums: {{ book.albums|join(", ") }}</p>{% endif %}
+        </div>
+        <div class="book-actions">
+            <a class="button" href="{{ url_for('edit_book', book_id=book.id) }}">Edit</a>
+            <a class="button" href="{{ url_for('delete_book', book_id=book.id) }}">Delete</a>
+        </div>
+    </article>
+{% else %}
+    <p>No wishlist books match.</p>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back-link" href="{{ url_for('wishlist') }}">← Wishlist</a>
+<h2>Filter Wishlist</h2>
+
+<form method="post">
+    Title: <input type="text" name="title"><br>
+    Series: <input type="text" name="series_name"><br>
+    Reading Status:
+    <select name="reading_status">
+        <option value="">-- Any --</option>
+        {% for status in ['not read','reading','finished','dnf'] %}
+            <option value="{{ status }}">{{ status }}</option>
+        {% endfor %}
+    </select><br>
+    Tag: <input type="text" name="tag"><br><br>
+    <button class="button" type="submit">Filter</button>
+    <a class="button" href="{{ url_for('filter_wishlist') }}">Clear</a>
+</form>
+
+{% if books is not none %}
+<hr>
+<div class="book-grid">
+{% for book in books %}
+    <article class="book-card">
+        <div>
+            <h3>{{ book.title }}</h3>
+            <p>Author: {{ book.author }}</p>
+            {% if book.series_name %}<p>Series: {{ book.series_name }}{% if book.series_position %} (Book {{ book.series_position }}){% endif %}</p>{% endif %}
+            <p>Reading: {{ book.reading_status.value }}</p>
+            <p>Rating: {{ book.rating or "-" }}</p>
+            <p>Tags: {% if book.tags %}{{ book.tags|map(attribute="name")|join(", ") }}{% else %}-{% endif %}</p>
+            {% if book.albums %}<p>Albums: {{ book.albums|join(", ") }}</p>{% endif %}
+        </div>
+        <div class="book-actions">
+            <a class="button" href="{{ url_for('edit_book', book_id=book.id) }}">Edit</a>
+            <a class="button" href="{{ url_for('delete_book', book_id=book.id) }}">Delete</a>
+        </div>
+    </article>
+{% else %}
+    <p>No wishlist books match.</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

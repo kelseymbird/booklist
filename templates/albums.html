@@ -12,6 +12,9 @@
         </div>
         <div class="book-actions">
             <a class="button" href="{{ url_for('album_detail', album_id=album.id) }}">Open Album</a>
+            <form method="post" action="{{ url_for('delete_album', album_id=album.id) }}" onsubmit="return confirm('Delete this album? Its books will remain in your library.');">
+                <button class="button" type="submit">Delete Album</button>
+            </form>
         </div>
     </div>
 {% else %}

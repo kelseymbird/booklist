@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>{{ "Edit Book" if book else "Add a Book" }}</h2>
+<a class="back-link" href="{{ url_for('wishlist') if wishlist|default(false) else url_for('index') }}">← {{ "Wishlist" if wishlist|default(false) else "Home" }}</a>
+<h2>{{ "Edit Book" if book else ("Add to Wishlist" if wishlist|default(false) else "Add a Book") }}</h2>
 
 <form method="post" class="form-card">
     <label>Title <input name="title" required value="{{ book.title if book else '' }}"></label>
@@ -17,6 +18,9 @@
         </select>
     </label>
 
+    {% if wishlist|default(false) %}
+    <p>Ownership Status: want</p>
+    {% else %}
     <label>Ownership Status
         <select name="ownership_status">
             {% for status in ['owned','not owned','want'] %}
@@ -24,13 +28,17 @@
             {% endfor %}
         </select>
     </label>
+    {% endif %}
 
     <label>Rating <input type="number" min="1" max="5" name="rating" value="{{ book.rating if book and book.rating else '' }}"></label>
     <label>Tags <input name="tags" value="{% if book %}{% for tag in book.tags %}{{ tag.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}"></label>
     <label>Albums <input name="albums" value="{% if book %}{{ book.albums|join(', ') }}{% endif %}"></label>
     <small>Separate tags and album names with commas. A book can belong to multiple albums.</small>
 
-    <button class="button" type="submit">Save</button>
+    <div class="book-actions">
+        <button class="button" type="submit">Save</button>
+        <a class="button" href="{{ url_for('wishlist') if wishlist|default(false) else url_for('index') }}">Cancel</a>
+    </div>
 </form>
 
 {% endblock %}

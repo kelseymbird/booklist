@@ -157,6 +157,13 @@ class SQLiteBookRepository:
                 for row in cursor.fetchall()
             ]
 
+    def delete_album(self, album_id):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM book_albums WHERE album_id=?", (album_id,))
+            cursor.execute("DELETE FROM albums WHERE id=?", (album_id,))
+            conn.commit()
+
     def get_album(self, album_id):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()

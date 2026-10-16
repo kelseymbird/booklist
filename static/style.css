@@ -136,8 +136,17 @@ select {
     background-color: #f6f6f6;
     font: inherit;
     outline: none;
-    width: 100%;
+    width: auto;
+    min-width: 150px;
+    max-width: 300px;
+    margin-bottom: 8px;
     box-sizing: border-box;
+}
+
+ .form-card input,
+.form-card select {
+    width: 100%;
+    max-width: 100%;
 }
 
 @media (max-width: 900px) {

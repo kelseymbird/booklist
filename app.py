@@ -11,11 +11,11 @@ repo = SQLiteBookRepository()
 service = LibraryService(repo)
 
 
-def book_from_form(book=None):
+def book_from_form(book=None, wishlist=False):
     title = request.form["title"]
     author = request.form["author"]
     reading_status = ReadingStatus(request.form["reading_status"])
-    ownership_status = OwnershipStatus(request.form["ownership_status"])
+    ownership_status = OwnershipStatus.WANT if wishlist else OwnershipStatus(request.form["ownership_status"])
     rating = request.form.get("rating")
     series_position = request.form.get("series_position")
     tags = [
@@ -48,7 +48,9 @@ def book_from_form(book=None):
 
 @app.route("/")
 def index():
-    return render_template("index.html", books=service.list_books())
+    sort_by = request.args.get("sort")
+    books = service.list_books(sort_by=sort_by)
+    return render_template("index.html", books=books, sort_by=sort_by)
 
 
 @app.route("/albums")
@@ -62,6 +64,12 @@ def album_detail(album_id):
     if not album:
         return redirect(url_for("albums"))
     return render_template("album_detail.html", album=album, books=books)
+
+
+@app.route("/albums/<int:album_id>/delete", methods=["POST"])
+def delete_album(album_id):
+    repo.delete_album(album_id)
+    return redirect(url_for("albums"))
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -99,9 +107,50 @@ def filter_books():
             ownership_status=OwnershipStatus(ownership_status) if ownership_status else None,
             tag=request.form.get("tag") or None,
             series_name=request.form.get("series_name") or None,
+            title=request.form.get("title") or None,
         )
         return render_template("filter.html", books=books)
     return render_template("filter.html", books=None)
+
+
+@app.route("/wishlist", methods=["GET", "POST"])
+def wishlist():
+    if request.method == "POST":
+        reading_status = request.form.get("reading_status")
+        books = service.filter_books(
+            reading_status=ReadingStatus(reading_status) if reading_status else None,
+            tag=request.form.get("tag") or None,
+            series_name=request.form.get("series_name") or None,
+            title=request.form.get("title") or None,
+        )
+    else:
+        books = service.list_books()
+
+    books = [book for book in books if book.ownership_status == OwnershipStatus.WANT]
+    return render_template("wishlist.html", books=books)
+
+
+@app.route("/wishlist/filter", methods=["GET", "POST"])
+def filter_wishlist():
+    books = None
+    if request.method == "POST":
+        reading_status = request.form.get("reading_status")
+        books = service.filter_books(
+            reading_status=ReadingStatus(reading_status) if reading_status else None,
+            tag=request.form.get("tag") or None,
+            series_name=request.form.get("series_name") or None,
+            title=request.form.get("title") or None,
+        )
+        books = [book for book in books if book.ownership_status == OwnershipStatus.WANT]
+    return render_template("wishlist_filter.html", books=books)
+
+
+@app.route("/wishlist/add", methods=["GET", "POST"])
+def add_wishlist_book():
+    if request.method == "POST":
+        service.add_book(book_from_form(wishlist=True))
+        return redirect(url_for("wishlist"))
+    return render_template("add_edit.html", book=None, wishlist=True)
 
 
 if __name__ == "__main__":
