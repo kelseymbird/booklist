@@ -1,10 +1,6 @@
-from dataclasses import dataclass, field
-from datetime import date
-from typing import List
 from .tag import Tag
-from .enums import ReadingStatus, OwnershipStatus
 
-@dataclass
+
 class Book:
     def __init__(
         self,
@@ -16,7 +12,8 @@ class Book:
         tags=None,
         id=None,
         series_name=None,
-        series_position=None
+        series_position=None,
+        albums=None,
     ):
         self.id = id
         self.title = title
@@ -27,3 +24,4 @@ class Book:
         self.tags = tags if tags else []
         self.series_name = series_name
         self.series_position = series_position
+        self.albums = albums if albums else []

@@ -2,13 +2,12 @@ import sqlite3
 from booklist.domain.book import Book
 from booklist.domain.tag import Tag
 from booklist.domain.enums import ReadingStatus, OwnershipStatus
-from datetime import date
 
 DB_FILE = "books.db"
 
+
 class SQLiteBookRepository:
     def __init__(self):
-        # Create tables if they don't exist
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -31,36 +30,59 @@ class SQLiteBookRepository:
                     FOREIGN KEY(book_id) REFERENCES books(id)
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS albums (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL COLLATE NOCASE UNIQUE
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS book_albums (
+                    book_id INTEGER NOT NULL,
+                    album_id INTEGER NOT NULL,
+                    PRIMARY KEY (book_id, album_id),
+                    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE,
+                    FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE
+                )
+            """)
             conn.commit()
 
-    # Add a book
+    def _save_book_albums(self, cursor, book_id, album_names):
+        cursor.execute("DELETE FROM book_albums WHERE book_id=?", (book_id,))
+        names = dict.fromkeys(
+            name.strip() for name in (album_names or []) if name.strip()
+        )
+        for name in names:
+            cursor.execute("INSERT OR IGNORE INTO albums (name) VALUES (?)", (name,))
+            cursor.execute("SELECT id FROM albums WHERE name=? COLLATE NOCASE", (name,))
+            album_id = cursor.fetchone()[0]
+            cursor.execute(
+                "INSERT OR IGNORE INTO book_albums (book_id, album_id) VALUES (?, ?)",
+                (book_id, album_id),
+            )
+
     def add(self, book: Book):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO books 
+                INSERT INTO books
                 (title, author, reading_status, ownership_status, rating, series_name, series_position)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
-                book.title,
-                book.author,
-                book.reading_status.value,
-                book.ownership_status.value,
-                book.rating,
-                book.series_name,
-                book.series_position
+                book.title, book.author, book.reading_status.value,
+                book.ownership_status.value, book.rating, book.series_name,
+                book.series_position,
             ))
             book.id = cursor.lastrowid
-
             for tag in book.tags:
-                cursor.execute("""
-                    INSERT INTO tags (book_id, name) VALUES (?, ?)
-                """, (book.id, tag.name))
-
+                cursor.execute(
+                    "INSERT INTO tags (book_id, name) VALUES (?, ?)",
+                    (book.id, tag.name),
+                )
+            self._save_book_albums(cursor, book.id, book.albums)
             conn.commit()
         return book
 
-    # Update a book
     def update(self, book: Book):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
@@ -70,66 +92,105 @@ class SQLiteBookRepository:
                     series_name=?, series_position=?
                 WHERE id=?
             """, (
-                book.title,
-                book.author,
-                book.reading_status.value,
-                book.ownership_status.value,
-                book.rating,
-                book.series_name,
-                book.series_position,
-                book.id
+                book.title, book.author, book.reading_status.value,
+                book.ownership_status.value, book.rating, book.series_name,
+                book.series_position, book.id,
             ))
-            # Delete old tags
             cursor.execute("DELETE FROM tags WHERE book_id=?", (book.id,))
-            # Insert new tags
             for tag in book.tags:
-                cursor.execute("""
-                    INSERT INTO tags (book_id, name) VALUES (?, ?)
-                """, (book.id, tag.name))
-
+                cursor.execute(
+                    "INSERT INTO tags (book_id, name) VALUES (?, ?)",
+                    (book.id, tag.name),
+                )
+            self._save_book_albums(cursor, book.id, book.albums)
             conn.commit()
         return book
 
-    # Delete a book
     def delete(self, book_id: int):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM tags WHERE book_id=?", (book_id,))
+            cursor.execute("DELETE FROM book_albums WHERE book_id=?", (book_id,))
             cursor.execute("DELETE FROM books WHERE id=?", (book_id,))
             conn.commit()
 
-    # Get all books
     def get_all(self):
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, title, author, reading_status,
-                       ownership_status, rating, series_name, series_position
-                FROM books
+                SELECT id, title, author, reading_status, ownership_status,
+                       rating, series_name, series_position
+                FROM books ORDER BY title COLLATE NOCASE
             """)
             rows = cursor.fetchall()
             books = []
             for row in rows:
-                book_id, title, author, reading_status, ownership_status, rating, series_name, series_position = row
-
+                (book_id, title, author, reading_status, ownership_status,
+                 rating, series_name, series_position) = row
                 cursor.execute("SELECT name FROM tags WHERE book_id=?", (book_id,))
-                tag_rows = cursor.fetchall()
-                tags = [Tag(id=None, name=tr[0]) for tr in tag_rows]
-
+                tags = [Tag(id=None, name=r[0]) for r in cursor.fetchall()]
+                cursor.execute("""
+                    SELECT a.name FROM albums a
+                    JOIN book_albums ba ON ba.album_id = a.id
+                    WHERE ba.book_id=? ORDER BY a.name COLLATE NOCASE
+                """, (book_id,))
+                albums = [r[0] for r in cursor.fetchall()]
                 books.append(Book(
-                    id=book_id,
-                    title=title,
-                    author=author,
+                    id=book_id, title=title, author=author,
                     reading_status=ReadingStatus(reading_status),
                     ownership_status=OwnershipStatus(ownership_status),
-                    rating=rating,
-                    tags=tags,
-                    series_name=series_name,
-                    series_position=series_position
+                    rating=rating, tags=tags, series_name=series_name,
+                    series_position=series_position, albums=albums,
                 ))
         return books
 
-    # Optional: filter books
+    def list_albums(self):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT a.id, a.name, COUNT(ba.book_id)
+                FROM albums a LEFT JOIN book_albums ba ON ba.album_id=a.id
+                GROUP BY a.id, a.name ORDER BY a.name COLLATE NOCASE
+            """)
+            return [
+                {"id": row[0], "name": row[1], "book_count": row[2]}
+                for row in cursor.fetchall()
+            ]
+
+    def get_album(self, album_id):
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name FROM albums WHERE id=?", (album_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None, []
+            album = {"id": row[0], "name": row[1]}
+            cursor.execute("""
+                SELECT b.id, b.title, b.author, b.reading_status, b.ownership_status,
+                       b.rating, b.series_name, b.series_position
+                FROM books b JOIN book_albums ba ON ba.book_id=b.id
+                WHERE ba.album_id=? ORDER BY b.title COLLATE NOCASE
+            """, (album_id,))
+            books = []
+            for row in cursor.fetchall():
+                (book_id, title, author, reading_status, ownership_status,
+                 rating, series_name, series_position) = row
+                cursor.execute("SELECT name FROM tags WHERE book_id=?", (book_id,))
+                tags = [Tag(id=None, name=r[0]) for r in cursor.fetchall()]
+                cursor.execute("""
+                    SELECT a.name FROM albums a JOIN book_albums ba ON ba.album_id=a.id
+                    WHERE ba.book_id=? ORDER BY a.name COLLATE NOCASE
+                """, (book_id,))
+                albums = [r[0] for r in cursor.fetchall()]
+                books.append(Book(
+                    id=book_id, title=title, author=author,
+                    reading_status=ReadingStatus(reading_status),
+                    ownership_status=OwnershipStatus(ownership_status),
+                    rating=rating, tags=tags, series_name=series_name,
+                    series_position=series_position, albums=albums,
+                ))
+            return album, books
+
     def filter(self, reading_status=None, ownership_status=None, tag=None):
         books = self.get_all()
         if reading_status:

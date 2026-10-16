@@ -11,86 +11,75 @@ repo = SQLiteBookRepository()
 service = LibraryService(repo)
 
 
+def book_from_form(book=None):
+    title = request.form["title"]
+    author = request.form["author"]
+    reading_status = ReadingStatus(request.form["reading_status"])
+    ownership_status = OwnershipStatus(request.form["ownership_status"])
+    rating = request.form.get("rating")
+    series_position = request.form.get("series_position")
+    tags = [
+        Tag(id=None, name=name.strip())
+        for name in request.form.get("tags", "").split(",")
+        if name.strip()
+    ]
+    albums = list(dict.fromkeys(
+        name.strip()
+        for name in request.form.get("albums", "").split(",")
+        if name.strip()
+    ))
+    values = {
+        "title": title,
+        "author": author,
+        "reading_status": reading_status,
+        "ownership_status": ownership_status,
+        "rating": int(rating) if rating else None,
+        "tags": tags,
+        "series_name": request.form.get("series_name") or None,
+        "series_position": int(series_position) if series_position else None,
+        "albums": albums,
+    }
+    if book:
+        for key, value in values.items():
+            setattr(book, key, value)
+        return book
+    return Book(id=None, **values)
+
+
 @app.route("/")
 def index():
-    books = service.list_books()
-    return render_template("index.html", books=books)
+    return render_template("index.html", books=service.list_books())
+
+
+@app.route("/albums")
+def albums():
+    return render_template("albums.html", albums=repo.list_albums())
+
+
+@app.route("/albums/<int:album_id>")
+def album_detail(album_id):
+    album, books = repo.get_album(album_id)
+    if not album:
+        return redirect(url_for("albums"))
+    return render_template("album_detail.html", album=album, books=books)
 
 
 @app.route("/add", methods=["GET", "POST"])
 def add_book():
     if request.method == "POST":
-        title = request.form["title"]
-        author = request.form["author"]
-
-        reading_status = ReadingStatus(request.form["reading_status"])
-        ownership_status = OwnershipStatus(request.form["ownership_status"])
-
-        rating = request.form.get("rating")
-        rating = int(rating) if rating else None
-
-        # ✅ Series fields
-        series_name = request.form.get("series_name") or None
-        series_position = request.form.get("series_position")
-        series_position = int(series_position) if series_position else None
-
-        tags_raw = request.form.get("tags", "")
-        tags = [
-            Tag(id=None, name=t.strip())
-            for t in tags_raw.split(",")
-            if t.strip()
-        ]
-
-        book = Book(
-            id=None,
-            title=title,
-            author=author,
-            reading_status=reading_status,
-            ownership_status=ownership_status,
-            rating=rating,
-            tags=tags,
-            series_name=series_name,
-            series_position=series_position,
-        )
-
-        service.add_book(book)
+        service.add_book(book_from_form())
         return redirect(url_for("index"))
-
     return render_template("add_edit.html", book=None)
 
 
 @app.route("/edit/<int:book_id>", methods=["GET", "POST"])
 def edit_book(book_id):
-    books = service.list_books()
-    book = next((b for b in books if b.id == book_id), None)
-
+    book = next((item for item in service.list_books() if item.id == book_id), None)
     if not book:
         return redirect(url_for("index"))
-
     if request.method == "POST":
-        book.title = request.form["title"]
-        book.author = request.form["author"]
-        book.reading_status = ReadingStatus(request.form["reading_status"])
-        book.ownership_status = OwnershipStatus(request.form["ownership_status"])
-
-        rating = request.form.get("rating")
-        book.rating = int(rating) if rating else None
-
-        # ✅ Series fields
-        book.series_name = request.form.get("series_name") or None
-        series_position = request.form.get("series_position")
-        book.series_position = int(series_position) if series_position else None
-
-        tags_raw = request.form.get("tags", "")
-        book.tags = [
-            Tag(id=None, name=t.strip())
-            for t in tags_raw.split(",")
-            if t.strip()
-        ]
-
-        service.update_book(book)
+        service.update_book(book_from_form(book))
         return redirect(url_for("index"))
-
     return render_template("add_edit.html", book=book)
 
 
@@ -105,23 +94,14 @@ def filter_books():
     if request.method == "POST":
         reading_status = request.form.get("reading_status")
         ownership_status = request.form.get("ownership_status")
-        tag = request.form.get("tag")
-        series_name = request.form.get("series_name")
-
-
-        reading_status = ReadingStatus(reading_status) if reading_status else None
-        ownership_status = OwnershipStatus(ownership_status) if ownership_status else None
-
         books = service.filter_books(
-            reading_status=reading_status,
-            ownership_status=ownership_status,
-            tag=tag or None,
-            series_name=series_name or None
+            reading_status=ReadingStatus(reading_status) if reading_status else None,
+            ownership_status=OwnershipStatus(ownership_status) if ownership_status else None,
+            tag=request.form.get("tag") or None,
+            series_name=request.form.get("series_name") or None,
         )
-
         return render_template("filter.html", books=books)
-
-    return render_template("filter.html")
+    return render_template("filter.html", books=None)
 
 
 if __name__ == "__main__":
