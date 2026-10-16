@@ -1,22 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Your Albums</h2>
-<p class="page-intro">Browse your books by album. Books can appear in more than one album.</p>
 
-<div class="album-grid">
+<h2>Your Albums</h2>
+
+<div class="book-grid">
 {% for album in albums %}
-    <a class="album-card" href="{{ url_for('album_detail', album_id=album.id) }}">
-        <span class="album-card-icon" aria-hidden="true">♫</span>
-        <h3>{{ album.name }}</h3>
-        <p>{{ album.book_count }} {{ "book" if album.book_count == 1 else "books" }}</p>
-        <span class="album-open">View album →</span>
-    </a>
+    <div class="book-card">
+        <div>
+            <h3>{{ album.name }}</h3>
+            <p>{{ album.book_count }} {{ "book" if album.book_count == 1 else "books" }}</p>
+        </div>
+        <div class="book-actions">
+            <a class="button" href="{{ url_for('album_detail', album_id=album.id) }}">Open Album</a>
+        </div>
+    </div>
 {% else %}
-    <div class="empty-state">
+    <div class="book-card">
         <h3>No albums yet</h3>
-        <p>Add one or more album names to a book when you add or edit it.</p>
-        <a class="button" href="{{ url_for('add_book') }}">Add a book</a>
+        <p>Add album names to a book when you add or edit it. Separate names with commas to put a book in multiple albums.</p>
+        <div class="book-actions">
+            <a class="button" href="{{ url_for('add_book') }}">Add a Book</a>
+        </div>
     </div>
 {% endfor %}
 </div>
+
 {% endblock %}
